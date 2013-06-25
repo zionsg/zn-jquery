@@ -1,9 +1,9 @@
-znCrop jQuery plugin
---------------------
+znResize jQuery plugin
+----------------------
 
 ##### version 1.0.0, 2013-06-25
 
-Resize and crop &lt;img&gt; children to fill their parent containers.
+Resize image to fit parent container.
 
 ```
 <style>
@@ -35,7 +35,7 @@ Resize and crop &lt;img&gt; children to fill their parent containers.
   <br />
 
   Cropped:<br />
-  <div class="thumbnail crop">
+  <div class="thumbnail resize">
     <img src="landscape.jpg" />
   </div>
 </div>
@@ -52,17 +52,17 @@ Resize and crop &lt;img&gt; children to fill their parent containers.
   <br />
 
   Cropped:<br />
-  <div class="thumbnail crop">
+  <div class="thumbnail resize">
     <img src="portrait.jpg" />
   </div>
 </div>
 
 <script>
-  // znCrop needs to be called after all the required images have completed loading
-  // in order to compare the natural width and height, hence in window.load()
+  // znResize needs to be called after all the required images have completed loading
+  // in order to compare the natural width and height, hence placed in window.load()
   var exampleScript = function () {
       $(window).load(function () {
-          $('.crop').znCrop();
+          $('.resize').znResize();
       });
   }();
 </script>
@@ -70,4 +70,4 @@ Resize and crop &lt;img&gt; children to fill their parent containers.
 
 _BECOMES_
 
-![Screenshot of result](https://raw.github.com/zionsg/zn-jquery/master/znCrop/README_screenshot.jpg)
+![Screenshot of result](https://raw.github.com/zionsg/zn-jquery/master/znResize/README_screenshot.jpg)
