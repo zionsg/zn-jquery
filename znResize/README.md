@@ -10,7 +10,7 @@ Resize image to fit parent container.
   .thumbnail {
     border: 3px solid green;
     height: 80px;
-    overflow: hidden; /* though znCrop will add this later, this will prevent images from overflowing when loading */
+    overflow: hidden; /* though znResize will add this later, this will prevent images from overflowing when loading */
     width: 80px;
   }
 
@@ -21,7 +21,7 @@ Resize image to fit parent container.
 </style>
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
-<script src="zn-jquery-zncrop.min.js"></script>
+<script src="zn-jquery-znResize.min.js"></script>
 
 <div class="float">
   Original:<br />
