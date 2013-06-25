@@ -1,6 +1,8 @@
 znCrop jQuery plugin
 --------------------
 
+##### version 1.0.0, 2013-06-25
+
 Resize and crop &lt;img&gt; children to fill their parent containers.
 
 ```
