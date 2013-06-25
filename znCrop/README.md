@@ -1,7 +1,7 @@
 znCrop jQuery plugin
 --------------------
 
-Resize and crop <img> children to fill their parent containers.
+Resize and crop &lt;img&gt; children to fill their parent containers.
 
 ```
 <style>
