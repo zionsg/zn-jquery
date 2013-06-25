@@ -11,8 +11,7 @@
     /**
      * Resize and crop <img> children to fill their parent containers
      *
-     * @example $('div.thumbnail').znCrop();
-     * @param   bool firstLevel Default = true. Flag to restrict to 1st level <img> only.
+     * @param   bool firstLevel Default = true. Restrict to 1st level <img> only.
      * @return  this
      */
     $.fn.znCrop = function (options) {
@@ -21,10 +20,12 @@
             firstLevel: true
         }, options);
 
-        this.css('overflow', 'hidden');
         (config.firstLevel ? this.children('img') : this.find('img')).each(function () {
+            // IE8 and lower do not support naturalWidth and naturalHeight
             var naturalWidth  = this.naturalWidth || $(this).css('width', 'auto').width(),
                 naturalHeight = this.naturalHeight || $(this).css('height', 'auto').height();
+
+            $(this).parent().css('overflow', 'hidden');
             if (naturalWidth >= naturalHeight) {
                 $(this).css('height', '100%').css('width', null);
             } else {
