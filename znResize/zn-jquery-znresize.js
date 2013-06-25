@@ -20,7 +20,7 @@
             strategy: 'crop'
         }, options);
 
-        $(this).each(function () {
+        this.each(function () {
             // IE8 and lower do not support naturalWidth and naturalHeight hence the .css() check
             var naturalWidth  = this.naturalWidth || $(this).css('width', 'auto').width(),
                 naturalHeight = this.naturalHeight || $(this).css('height', 'auto').height();

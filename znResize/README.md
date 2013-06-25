@@ -62,7 +62,7 @@ Resize image to fit parent container.
   // in order to compare the natural width and height, hence placed in window.load()
   var exampleScript = function () {
       $(window).load(function () {
-          $('.resize').znResize();
+          $('.resize img').znResize();
       });
   }();
 </script>
