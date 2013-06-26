@@ -83,7 +83,7 @@
                 $element.css('margin-left', 'auto');
             }
             if (config.middle) {
-                // 'auto' for margin does not work here
+                // 'auto' for margin does not work here, hence using height difference
                 $parent.css('vertical-align', 'middle');
                 $element.css('margin-top', ($parent.height() - $element.height()) / 2);
             }
