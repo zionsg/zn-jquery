@@ -6,4 +6,4 @@
 * Added 'fit' strategy
 
 ##### version 1.0.0, 2013-06-25
-* Plugin created - first attempt in building a jQuery plugin
+* Plugin created - first attempt at building a jQuery plugin
