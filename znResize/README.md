@@ -1,7 +1,7 @@
 znResize jQuery plugin
 ----------------------
 
-##### version 1.0.0, 2013-06-25
+##### version 1.1.0, 2013-06-26
 
 Resize image to fit parent container.
 
@@ -10,50 +10,55 @@ Resize image to fit parent container.
   .thumbnail {
     border: 3px solid green;
     height: 80px;
+    margin: auto;
     overflow: hidden; /* though znResize will add this later, this will prevent images from overflowing when loading */
     width: 80px;
   }
 
   .float {
+    border: 1px dotted gray;
     float: left;
-    margin-right: 20px;
+    margin-right: 50px;
+    padding: 10px;
+    text-align: center;
   }
+
 </style>
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
-<script src="zn-jquery-znResize.min.js"></script>
+<script src="zn-jquery-znresize.min.js"></script>
 
 <div class="float">
-  Original:<br />
+  Original<br />
   <img src="landscape.jpg" />
   <br />
 
-  Scaled:<br />
+  Crop<br />
   <div class="thumbnail">
-    <img src="landscape.jpg" width="100%" />
+    <img class="crop" src="landscape.jpg" />
   </div>
   <br />
 
-  Cropped:<br />
-  <div class="thumbnail resize">
-    <img src="landscape.jpg" />
+  Fit<br />
+  <div class="thumbnail">
+    <img class="fit" src="landscape.jpg" />
   </div>
 </div>
 
 <div class="float">
-  Original:<br />
+  Original<br />
   <img src="portrait.jpg" />
   <br />
 
-  Scaled:<br />
+  Crop<br />
   <div class="thumbnail">
-    <img src="portrait.jpg" height="100%" />
+    <img class="crop" src="portrait.jpg" />
   </div>
   <br />
 
-  Cropped:<br />
-  <div class="thumbnail resize">
-    <img src="portrait.jpg" />
+  Fit<br />
+  <div class="thumbnail">
+    <img class="fit" src="portrait.jpg" />
   </div>
 </div>
 
@@ -62,7 +67,12 @@ Resize image to fit parent container.
   // in order to compare the natural width and height, hence placed in window.load()
   var exampleScript = function () {
       $(window).load(function () {
-          $('.resize img').znResize();
+          $('.crop').znResize();
+          $('.fit').znResize({
+              strategy: 'fit',
+              center: true,
+              middle: true
+          });
       });
   }();
 </script>
