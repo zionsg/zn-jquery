@@ -1,0 +1,51 @@
+/**
+ * CSS for znJEditable
+ *
+ * Selectors are based on defaults for options.
+ *
+ * @author Zion Ng <zion@intzone.com>
+ * @link   https://github.com/zionsg/zn-jquery/tree/master/znJEditable for canonical source repository
+ */
+
+#document-content {
+  /* Prevent selecting of text on website - cannot apply to * as it prevents typing in login fields in iOS */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.non-content {
+  background-color: #c0ffff;
+  color: #999;
+  display: none;
+  margin: 5px 0;
+  padding: 5px;
+}
+
+.edit {
+  background-color: #ffffc0;
+  color: #c04000;
+  display: inline;
+  border: 1px solid #c04000;
+  line-height: 2em; /* inline elements such as span do not have vertical margin hence this to create spacing */
+  margin: 0 5px;
+  padding: 5px;
+}
+
+.edit form {
+  color: black;
+  display: inline;
+}
+.edit form button,
+.edit form input,
+.edit form select {
+  line-height: 1em;
+  margin: 0 1px;
+}
+
+.edit-table-template { display: none; /* template row for .edit-table */ }
+
+/* End CSS */
