@@ -32,5 +32,9 @@ See demo at http://demo.intzone.com/znjeditable
       addRowText: 'add row',
       removeRowText: 'remove row'
   });
+  
+  $('#form-submit-button').click(function () {
+      $('#form_hidden_textarea_field').html($.znJEditable.save());
+  });
 </script>
 ```
