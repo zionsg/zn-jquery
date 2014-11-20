@@ -69,7 +69,9 @@
      *                                 prepended action column), {2} for the 2nd <td> and so on,
      *                                 eg. data-join-format="Mr {1} {2}".
      * @param string dataJoinGlue      Attribute for editTable table. Table's value specifies text for joining
-     *                                 formatted text for each row, eg. data-join-glue=" and ".
+     *                                 formatted text for each row, eg. data-join-glue=", ".
+     * @param string dataJoinLastGlue  Attribute for editTable table. Table's value specifies text for joining
+     *                                 formatted text for the last 2 rows, eg. data-join-last-glue=" and ".
      * @param string dataJoinStart     Attribute for editTable table. Table's value specifies text to prepend to final
      *                                 joined text for table if not empty, eg. data-join-start="The people are ".
      * @param string dataJoinEnd       Attribute for editTable table. Table's value specifies text to append to final
@@ -101,6 +103,7 @@
         initialRows: 3,
         dataJoinFormat: 'data-join-format',
         dataJoinGlue: 'data-join-glue',
+        dataJoinLastGlue: 'data-join-last-glue',
         dataJoinStart: 'data-join-start',
         dataJoinEnd: 'data-join-end',
         dataJoiner: 'data-joiner',
@@ -294,40 +297,80 @@
 
         // Tables with attribute data-join-format will populate DOM elements
         // with attribute data-joiner set to the table id.
+        //
         // The table's data-join-format attribute specifies how values from <td> for each row are combined,
-        // with {1} referring to 1st <td> (action column ignored), {2} referring to 2nd <td> and so on.
-        // The table's data-join-glue attribute specifies the text joining the result from each row, eg. " and ".
+        // with {1} referring to 1st <td> (action column ignored), {2} referring to 2nd <td> and so on and
+        // {row} referring to current row number.
+        //
+        // The data-join-glue attribute specifies the text joining the result from each row, eg. ", ".
+        // The data-join-last-glue attribute specifies the text joining the result for the last 2 rows, eg. " and ".
+        //
+        // The data-join-start and data-join-end attributes specify the text to prepend and append respectively
+        // to the final joined text if the text is not empty, with {rows} referring to total no. of rows,
+        // text for {one:text} shown if there's only 1 row and text for {many:text} shown if many rows.
         onJoinerChangeFunc: function () {
             var $table = $(this).closest('table'),
                 rowFormat = $table.attr($.znJEditable.config.dataJoinFormat), // table attribute
                 editTableTemplateClass = $.znJEditable.config.editTableTemplate.substr(1),
-                editTableActionClass = $.znJEditable.config.editTableAction.substr(1),
-                dataJoinGlue  = $.znJEditable.config.dataJoinGlue,
+                editTableActionClass   = $.znJEditable.config.editTableAction.substr(1),
+                dataJoinGlue     = $.znJEditable.config.dataJoinGlue,
+                dataJoinLastGlue = $.znJEditable.config.dataJoinLastGlue,
                 dataJoinStart = $.znJEditable.config.dataJoinStart,
                 dataJoinEnd   = $.znJEditable.config.dataJoinEnd,
-                dataJoiner = $.znJEditable.config.dataJoiner,
+                dataJoiner    = $.znJEditable.config.dataJoiner,
+                rowCnt = 0,
                 tableResult = [];
 
             if (!rowFormat) {
                 return;
             }
 
-            // Confirm outstanding input - change() will not be called if Cancel button is pressed
+            // Confirm outstanding input before joining cells - change() will not be called if Cancel button is pressed
             $('button[type="submit"]', this).click();
-            $('tr', $table).each(function () {
+            $('tr', $table).each(function (rowIndex) {
                 var rowResult = rowFormat;
                 if (!$(this).hasClass(editTableTemplateClass) && !$('th', this).length) {
-                    $('td', this).each(function (index) {
+                    rowCnt++;
+
+                    $('td', this).each(function (colIndex) {
                         if (!$(this).hasClass(editTableActionClass)) {
-                            rowResult = rowResult.replace('{' + index + '}', $(this).text().trim());
+                            // Cannot use rowIndex as it includes header row and template row
+                            rowResult = rowResult.replace('{' + colIndex + '}', $(this).text().trim())
+                                                 .replace('{row}', rowCnt);
                         }
                     });
                     tableResult.push(rowResult);
                 }
             });
-            result = tableResult.join($table.attr(dataJoinGlue));
+
+            // Join rows
+            resultCnt = tableResult.length;
+            if (0 == resultCnt) {
+                result = '';
+            } else if (1 == resultCnt) {
+                result = tableResult[0];
+            } else {
+                result = tableResult.slice(0, resultCnt - 1).join($table.attr(dataJoinGlue)) // slice won't include end
+                       + ($table.attr(dataJoinLastGlue) || $table.attr(dataJoinGlue))
+                       + tableResult[resultCnt - 1];
+            }
+
             if (result) {
-                result = ($table.attr(dataJoinStart) || '') + result + ($table.attr(dataJoinEnd) || '');
+                var oneRegex  = /(\{one:([^\}]*)\})/g,  // 'g' modifier searches for all occurrences
+                    manyRegex = /(\{many:([^\}]*)\})/g, // important for 2nd group not to match closing brace
+                    regexReplace  = function (match, $1, $2) { return $2; },
+                    regexRemove   = function (match, $1, $2) { return ''; };
+
+                startText = ($table.attr(dataJoinStart) || '').replace('{rows}', rowCnt);
+                endText   = ($table.attr(dataJoinEnd) || '').replace('{rows}', rowCnt);
+                if (1 == rowCnt) {
+                    startText = startText.replace(oneRegex, regexReplace).replace(manyRegex, regexRemove);
+                    endText   = endText.replace(oneRegex, regexReplace).replace(manyRegex, regexRemove);
+                } else { // many rows - no check for 0 rows as result will be empty but 0 usually uses plural forms
+                    startText = startText.replace(oneRegex, regexRemove).replace(manyRegex, regexReplace);
+                    endText   = endText.replace(oneRegex, regexRemove).replace(manyRegex, regexReplace);
+                }
+                result = startText + result + endText;
             }
             $('[' + dataJoiner + '="#' + $table.attr('id') + '"]').html(result);
         },
