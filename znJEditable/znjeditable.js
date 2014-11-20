@@ -70,6 +70,10 @@
      *                                 eg. data-join-format="Mr {1} {2}".
      * @param string dataJoinGlue      Attribute for editTable table. Table's value specifies text for joining
      *                                 formatted text for each row, eg. data-join-glue=" and ".
+     * @param string dataJoinStart     Attribute for editTable table. Table's value specifies text to prepend to final
+     *                                 joined text for table if not empty, eg. data-join-start="The people are ".
+     * @param string dataJoinEnd       Attribute for editTable table. Table's value specifies text to append to final
+     *                                 joined text for table if not empty, eg. data-join-end=" and we thank them.".
      * @param string dataJoiner        Attribute. Elements with this attribute set to id of table
      *                                 with dataJoinFormat attribute set will be populated dynamically when
      *                                 the table content changes.
@@ -97,6 +101,8 @@
         initialRows: 3,
         dataJoinFormat: 'data-join-format',
         dataJoinGlue: 'data-join-glue',
+        dataJoinStart: 'data-join-start',
+        dataJoinEnd: 'data-join-end',
         dataJoiner: 'data-joiner',
     };
 
@@ -296,7 +302,9 @@
                 rowFormat = $table.attr($.znJEditable.config.dataJoinFormat), // table attribute
                 editTableTemplateClass = $.znJEditable.config.editTableTemplate.substr(1),
                 editTableActionClass = $.znJEditable.config.editTableAction.substr(1),
-                dataJoinGlue = $.znJEditable.config.dataJoinGlue,
+                dataJoinGlue  = $.znJEditable.config.dataJoinGlue,
+                dataJoinStart = $.znJEditable.config.dataJoinStart,
+                dataJoinEnd   = $.znJEditable.config.dataJoinEnd,
                 dataJoiner = $.znJEditable.config.dataJoiner,
                 tableResult = [];
 
@@ -318,6 +326,9 @@
                 }
             });
             result = tableResult.join($table.attr(dataJoinGlue));
+            if (result) {
+                result = ($table.attr(dataJoinStart) || '') + result + ($table.attr(dataJoinEnd) || '');
+            }
             $('[' + dataJoiner + '="#' + $table.attr('id') + '"]').html(result);
         },
 
