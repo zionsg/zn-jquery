@@ -35,7 +35,7 @@
      * @param object jEditable         jEditable settings - not applied, just a placeholder option.
      * @param string documentContent   Single selector. Parent container for content. Form should not be in container.
      * @param string nonContent        Multiple selector. Non-content elements.
-     * @param string nonContentAction  Either 'hide' or 'delete'. Action to perform when populating
+     * @param string nonContentAction  Either 'hide' or 'remove'. Action to perform when populating
      *                                 editContent element for form submission. Default is 'hide' which
      *I                                allows for content to be edited again.
      * @param string edit              Multiple selector. jEditable will be applied to these elements.
@@ -62,23 +62,27 @@
      * @param string removeRowText     Text to display for links to remove rows.
      * @param string dataInitialRows   Attribute for editTable table. Table's value sets initial rows to add.
      * @param int    initalRows        Default value for initial rows to add for editTable tables.
-     * @param string dataJoinFormat    Attribute for editTable tables. Tables with this attribute set
-     *                                 will populate elements with dataJoiner attribute set to the table id
-     *                                 upon change. Table's value specifies how values from each <td> for
-     *                                 each row will be joined, with {1} referring to the 1st <td> (ignoring
-     *                                 prepended action column), {2} for the 2nd <td> and so on,
-     *                                 eg. data-join-format="Mr {1} {2}".
-     * @param string dataJoinGlue      Attribute for editTable table. Table's value specifies text for joining
-     *                                 formatted text for each row, eg. data-join-glue=", ".
-     * @param string dataJoinLastGlue  Attribute for editTable table. Table's value specifies text for joining
-     *                                 formatted text for the last 2 rows, eg. data-join-last-glue=" and ".
-     * @param string dataJoinStart     Attribute for editTable table. Table's value specifies text to prepend to final
-     *                                 joined text for table if not empty, eg. data-join-start="The people are ".
-     * @param string dataJoinEnd       Attribute for editTable table. Table's value specifies text to append to final
-     *                                 joined text for table if not empty, eg. data-join-end=" and we thank them.".
-     * @param string dataJoiner        Attribute. Elements with this attribute set to id of table
-     *                                 with dataJoinFormat attribute set will be populated dynamically when
+     * @param string dataJoiner        Attribute for editTable table. Tables with this attribute set to 1
+     *                                 will populate elements with dataJoin attribute set to the table id when
      *                                 the table content changes.
+     * @param string dataJoin          Attribute. Elements with this attribute set to id of table
+     *                                 with dataJoiner attribute set will be populated dynamically when
+     *                                 the table content changes.
+     * @param string dataJoinRow       Attribute for elements with dataJoin attribute. Element's value specifies format
+     *                                 for joining <td> cells for each <tr> row in table specified in dataJoin attribute.
+     *                                 @see $.znJEditable.onJoinerChangeFunc() for usage.
+     * @param string dataJoinGlue      Attribute for elements with dataJoin attribute. Element's value specifies text
+     *                                 for joining formatted text for each row.
+     *                                 @see $.znJEditable.onJoinerChangeFunc() for usage.
+     * @param string dataJoinLastGlue  Attribute for elements with dataJoin attribute. Element's value specifies text
+     *                                 for joining formatted text for the last 2 rows.
+     *                                 @see $.znJEditable.onJoinerChangeFunc() for usage.
+     * @param string dataJoinResult    Attribute for elements with dataJoin attribute. Element's value specifies format
+     *                                 for final joined text from the dataJoiner table.
+     *                                 @see $.znJEditable.onJoinerChangeFunc() for usage.
+     * @param string dataJoinEmpty     Attribute for elements with dataJoin attribute. Element's value specifies text
+     *                                 to return if final joined text from the dataJoiner table is empty.
+     *                                 @see $.znJEditable.onJoinerChangeFunc() for usage.
      */
     $.fn.znJEditable.defaults = {
         jEditable: {},
@@ -101,12 +105,14 @@
         removeRowText: 'remove row',
         dataInitialRows: 'data-initial-rows',
         initialRows: 3,
-        dataJoinFormat: 'data-join-format',
+        dataJoiner: 'data-joiner',
+        dataJoin: 'data-join',
+        dataJoinRow: 'data-join-row',
         dataJoinGlue: 'data-join-glue',
         dataJoinLastGlue: 'data-join-last-glue',
-        dataJoinStart: 'data-join-start',
-        dataJoinEnd: 'data-join-end',
-        dataJoiner: 'data-joiner',
+        dataJoinResult: 'data-join-result',
+        dataJoinEmpty: 'data-join-empty'
+        // last element should not end with comma
     };
 
     /**
@@ -130,7 +136,7 @@
             $(this.config.editTable).each(this.editTableFunc);
             $(this.config.editTableAction + ' a' + this.config.addRowLink).click(this.addRowFunc);
             $(this.config.editTableAction + ' a' + this.config.removeRowLink).click(this.removeRowFunc);
-            $('[' + this.config.dataJoinFormat + '] td').change(this.onJoinerChangeFunc).change(); // trigger on load
+            $('[' + this.config.dataJoiner + '] td').change(this.onJoinerChangeFunc).change(); // trigger on load
 
             // Show .non-content when editing document
             $(this.config.nonContent).show();
@@ -172,7 +178,7 @@
             });
         },
 
-        // Apply jEditable to elements with 'edit' class - input type can be specified via 'data-type' attribute
+        // Apply jEditable to elements with edit class - input type can be specified via 'data-type' attribute
         // Value-options for checkbox, radio and select elements can be set via 'data-options' attribute using JSON
         // Eg: <span class="edit" data-type="select" data-options="{'A':'Alpha','B':'Beta'}"
         //           placeholder="Name" title="Click to edit"></span>
@@ -187,7 +193,7 @@
             });
         },
 
-        // Event handlers for <select> elements with 'edit-chooser' class to choose content to display/edit
+        // Event handlers for <select> elements with editChooser class to choose content to display/edit
         // Eg. 1 chooser (option values set to selectors) & 2 choices (data-chooser attribute set to chooser id):
         //     On load, the option with the value specified by data-choice attribute will be marked as selected
         // <select id="z-chooser" class="edit-chooser" data-choice="#b">
@@ -215,15 +221,15 @@
 
         // Function for editTable table
         editTableFunc: function () {
-            var editTableTemplate = $.znJEditable.config.editTableTemplate,
+            var editTableTemplate    = $.znJEditable.config.editTableTemplate,
                 editTableActionClass = $.znJEditable.config.editTableAction.substr(1),
-                addRowClass = $.znJEditable.config.addRowLink.substr(1),
-                addRowText = $.znJEditable.config.addRowText,
-                removeRowClass = $.znJEditable.config.removeRowLink.substr(1),
-                removeRowText = $.znJEditable.config.removeRowText,
+                addRowClass     = $.znJEditable.config.addRowLink.substr(1),
+                addRowText      = $.znJEditable.config.addRowText,
+                removeRowClass  = $.znJEditable.config.removeRowLink.substr(1),
+                removeRowText   = $.znJEditable.config.removeRowText,
                 dataInitialRows = $.znJEditable.config.dataInitialRows,
                 initialRows = $.znJEditable.config.initialRows,
-                addRowFunc = $.znJEditable.addRowFunc;
+                addRowFunc  = $.znJEditable.addRowFunc;
 
             $(editTableTemplate, this).hide();
             $('tr:first', this).prepend(
@@ -249,18 +255,21 @@
 
         // Function for adding row to editTable table
         // For every new row added, .editable must be re-applied and the click events for the 'remove row' links
+        // If $table is passed in, table change event will not be triggered
         addRowFunc: function ($table, newRowHtml, rows) {
-            var editTableTemplate = $.znJEditable.config.editTableTemplate,
-                edit = $.znJEditable.config.edit,
+            var edit     = $.znJEditable.config.edit,
                 editFunc = $.znJEditable.editFunc,
+                editTableTemplate  = $.znJEditable.config.editTableTemplate,
+                editTableAction    = $.znJEditable.config.editTableAction,
+                removeRowLink      = $.znJEditable.config.removeRowLink,
+                removeRowFunc      = $.znJEditable.removeRowFunc,
+                dataJoiner         = $.znJEditable.config.dataJoiner,
                 onJoinerChangeFunc = $.znJEditable.onJoinerChangeFunc,
-                editTableAction = $.znJEditable.config.editTableAction,
-                removeRowLink = $.znJEditable.config.removeRowLink,
-                removeRowFunc = $.znJEditable.removeRowFunc,
-                dataJoinFormat = $.znJEditable.config.dataJoinFormat;
+                triggerChange      = false;
 
             if (!$table.length) {
                 $table = $(this).closest('table');
+                triggerChange = true;
             }
             if (!newRowHtml) {
                 var $templateRow = $('tr' + editTableTemplate, $table);
@@ -272,115 +281,142 @@
 
             for (var i = 1; i <= rows; i++) {
                 $newRow = $(newRowHtml);
-                $(edit, $newRow).each(editFunc).change(onJoinerChangeFunc); // apply editable and change event
-                $(editTableAction + ' a' + removeRowLink, $newRow).click(removeRowFunc); // apply click event to remove link
+                // apply editable, change event and click event for remove link
+                $(edit, $newRow).each(editFunc).change(onJoinerChangeFunc);
+                $(editTableAction + ' a' + removeRowLink, $newRow).click(removeRowFunc);
                 $table.append($newRow);
             }
 
-            if ($table.attr(dataJoinFormat)) {
-                $('td', $table).change(); // trigger change event for table with data-join-format
+            if (triggerChange && $table.attr(dataJoiner)) {
+                $('td', $table).change(); // trigger change event for dataJoiner table
             }
             return false;
         },
 
         // Function for removing row from editTable table
         removeRowFunc: function () {
-            var dataJoinFormat = $.znJEditable.config.dataJoinFormat,
+            var dataJoiner = $.znJEditable.config.dataJoiner,
                 $table = $(this).closest('table');
 
             $(this).closest('tr').remove();
-            if ($table.attr(dataJoinFormat)) {
-                $('td', $table).change(); // trigger change event for table with data-join-format
+            if ($table.attr(dataJoiner)) {
+                $('td', $table).change(); // trigger change event for dataJoiner table
             }
             return false;
         },
 
-        // Tables with attribute data-join-format will populate DOM elements
-        // with attribute data-joiner set to the table id.
+        // On change, tables with dataJoiner attribute set to 1 will populate DOM elements
+        // with dataJoin attribute set to the table id. The following attributes apply
+        // to those elements with dataJoin attribute.
         //
-        // The table's data-join-format attribute specifies how values from <td> for each row are combined,
+        // The dataJoinRow attribute specifies how values from <td> cells for each <tr> row are combined,
         // with {1} referring to 1st <td> (action column ignored), {2} referring to 2nd <td> and so on and
         // {row} referring to current row number.
         //
-        // The data-join-glue attribute specifies the text joining the result from each row, eg. ", ".
-        // The data-join-last-glue attribute specifies the text joining the result for the last 2 rows, eg. " and ".
+        // The dataJoinGlue attribute specifies the text joining the result from each row, eg. ", ".
+        // The dataJoinLastGlue attribute specifies the text joining the result for the last 2 rows, eg. " and ".
         //
-        // The data-join-start and data-join-end attributes specify the text to prepend and append respectively
-        // to the final joined text if the text is not empty, with {rows} referring to total no. of rows,
-        // text for {one:text} shown if there's only 1 row and text for {many:text} shown if many rows.
+        // The dataJoinResult attribute specifies the format for the final joined text from the dataJoiner table
+        // if the text is not empty, with {text} referring to the joined text, {rows} referring to total no. of rows,
+        // string for {0:string} shown if there are 0 rows, string for {1:string} shown if only 1 row,
+        // string for {n:string} shown if there is more than 1 row and string for {+:string} shown if 1 or more rows.
+        //
+        // The dataJoinEmpty attribute specifies the text to return if the final joined text is empty, with the
+        // same placeholders as dataJoinResult except {text}.
+        //
         onJoinerChangeFunc: function () {
             var $table = $(this).closest('table'),
-                rowFormat = $table.attr($.znJEditable.config.dataJoinFormat), // table attribute
                 editTableTemplateClass = $.znJEditable.config.editTableTemplate.substr(1),
                 editTableActionClass   = $.znJEditable.config.editTableAction.substr(1),
+                dataJoin         = $.znJEditable.config.dataJoin,
+                dataJoinRow      = $.znJEditable.config.dataJoinRow,
                 dataJoinGlue     = $.znJEditable.config.dataJoinGlue,
                 dataJoinLastGlue = $.znJEditable.config.dataJoinLastGlue,
-                dataJoinStart = $.znJEditable.config.dataJoinStart,
-                dataJoinEnd   = $.znJEditable.config.dataJoinEnd,
-                dataJoiner    = $.znJEditable.config.dataJoiner,
-                rowCnt = 0,
-                tableResult = [];
-
-            if (!rowFormat) {
-                return;
-            }
+                dataJoinResult   = $.znJEditable.config.dataJoinResult,
+                dataJoinEmpty    = $.znJEditable.config.dataJoinEmpty,
+                noneRegex      = /(\{0:([^\}]*)\})/g, // 'g' modifier searches for all occurrences
+                oneRegex       = /(\{1:([^\}]*)\})/g, // important for 2nd group not to match closing brace
+                manyRegex      = /(\{n:([^\}]*)\})/g,
+                oneOrManyRegex = /(\{\+:([^\}]*)\})/g,
+                regexReplace   = function (match, $1, $2) { return $2; },
+                regexRemove    = function (match, $1, $2) { return ''; };
 
             // Confirm outstanding input before joining cells - change() will not be called if Cancel button is pressed
             $('button[type="submit"]', this).click();
-            $('tr', $table).each(function (rowIndex) {
-                var rowResult = rowFormat;
-                if (!$(this).hasClass(editTableTemplateClass) && !$('th', this).length) {
-                    rowCnt++;
 
-                    $('td', this).each(function (colIndex) {
-                        if (!$(this).hasClass(editTableActionClass)) {
-                            // Cannot use rowIndex as it includes header row and template row
-                            rowResult = rowResult.replace('{' + colIndex + '}', $(this).text().trim())
-                                                 .replace('{row}', rowCnt);
+            // Run thru elements with dataJoin attribute set to table id and use their format
+            $('[' + dataJoin + '="#' + $table.attr('id') + '"]').each(function () {
+                var rowFormat   = $(this).attr(dataJoinRow) || '',
+                    glue        = $(this).attr(dataJoinGlue) || '',
+                    lastGlue    = $(this).attr(dataJoinLastGlue) || glue,
+                    rowCnt      = 0,
+                    tableResult = [],
+                    resultCnt   = 0,
+                    text        = '',
+                    result      = '';
+
+                // Continue even if rowFormat is empty as the element may just want to count rows in the final result
+                $('tr', $table).each(function (rowIndex) {
+                    var rowResult = rowFormat;
+                    if (!$(this).hasClass(editTableTemplateClass) && !$('th', this).length) {
+                        rowCnt++;
+                        if (rowFormat) {
+                            // Cannot replace {row} with rowIndex as it includes header row and template row
+                            rowResult = rowResult.replace('{row}', rowCnt);
+
+                            $('td', this).each(function (colIndex) {
+                                if (!$(this).hasClass(editTableActionClass)) { // assumes action column is index 0
+                                    rowResult = rowResult.replace('{' + colIndex + '}', $(this).text().trim());
+                                }
+                            });
+                            tableResult.push(rowResult);
                         }
-                    });
-                    tableResult.push(rowResult);
+                    }
+                });
+
+                // Join rows
+                resultCnt = tableResult.length;
+                if (0 == resultCnt) {
+                    text = '';
+                } else if (1 == resultCnt) {
+                    text = tableResult[0];
+                } else {
+                    text = tableResult.slice(0, resultCnt - 1).join(glue) // note that slice does not include end
+                         + lastGlue
+                         + tableResult[resultCnt - 1];
                 }
+
+                // Format final result
+                if (text) {
+                    result = ($(this).attr(dataJoinResult) || '').replace('{text}', text);
+                } else {
+                    result = ($(this).attr(dataJoinEmpty) || '');
+                }
+                result = result.replace('{rows}', rowCnt)
+                               .replace(noneRegex, (!rowCnt ? regexReplace : regexRemove))
+                               .replace(oneRegex,  (1 == rowCnt ? regexReplace : regexRemove))
+                               .replace(manyRegex, (rowCnt > 1 ? regexReplace : regexRemove))
+                               .replace(oneOrManyRegex, (rowCnt >= 1 ? regexReplace : regexRemove));
+
+                // Populate element
+                $(this).html(result);
             });
-
-            // Join rows
-            resultCnt = tableResult.length;
-            if (0 == resultCnt) {
-                result = '';
-            } else if (1 == resultCnt) {
-                result = tableResult[0];
-            } else {
-                result = tableResult.slice(0, resultCnt - 1).join($table.attr(dataJoinGlue)) // slice won't include end
-                       + ($table.attr(dataJoinLastGlue) || $table.attr(dataJoinGlue))
-                       + tableResult[resultCnt - 1];
-            }
-
-            if (result) {
-                var oneRegex  = /(\{one:([^\}]*)\})/g,  // 'g' modifier searches for all occurrences
-                    manyRegex = /(\{many:([^\}]*)\})/g, // important for 2nd group not to match closing brace
-                    regexReplace  = function (match, $1, $2) { return $2; },
-                    regexRemove   = function (match, $1, $2) { return ''; };
-
-                startText = ($table.attr(dataJoinStart) || '').replace('{rows}', rowCnt);
-                endText   = ($table.attr(dataJoinEnd) || '').replace('{rows}', rowCnt);
-                if (1 == rowCnt) {
-                    startText = startText.replace(oneRegex, regexReplace).replace(manyRegex, regexRemove);
-                    endText   = endText.replace(oneRegex, regexReplace).replace(manyRegex, regexRemove);
-                } else { // many rows - no check for 0 rows as result will be empty but 0 usually uses plural forms
-                    startText = startText.replace(oneRegex, regexRemove).replace(manyRegex, regexReplace);
-                    endText   = endText.replace(oneRegex, regexRemove).replace(manyRegex, regexReplace);
-                }
-                result = startText + result + endText;
-            }
-            $('[' + dataJoiner + '="#' + $table.attr('id') + '"]').html(result);
         },
 
         // Call this function upon form submission to copy content, hide non-content and remove action column from editTable tables
         // Returns HTML content from documentContent
         save: function () {
+            var nonContent = this.config.nonContent,
+                nonContentAction = this.config.nonContentAction;
+
             $(this.config.documentContent + ' button[type="cancel"]').click(); // cancel all outstanding inputs
-            $(this.config.nonContent).hide(); // hide all non-content
             $(this.config.editTableAction).remove(); // remove editTable action columns
+            if ('remove' == nonContentAction) { // remove non-content
+                $(nonContent).remove();
+            } else { // hide non-content by default
+                $(nonContent).hide();
+            }
+
             return $(this.config.documentContent).html();
         }
 
