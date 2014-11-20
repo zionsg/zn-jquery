@@ -4,7 +4,7 @@
  * @author  Zion Ng <zion@intzone.com>
  * @link    https://github.com/tuupola/jquery_jeditable for jEditable repository
  * @link    https://github.com/zionsg/zn-jquery/tree/master/znJEditable for canonical source repository
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 (function ($) {
@@ -42,12 +42,12 @@
      * @param string dataType          Attribute for jEditable elements to state input type, eg. data-type="text".
      * @param string dataOptions       Attribute for jEditable <select> elements to pass in options using JSON,
      *                                 eg. data-options="{'A':'Alpha','B':'Beta'}".
-     * @param string editChooser       Mutiple selector. When value (checkbox, radio, select) changes,
+     * @param string editChooser       Mutiple selector for <select> elements. When value changes,
      *                                 the element set by the selected option will be displayed
      *                                 while the elements set by the rest will be hidden.
-     * @param string dataChooser       Attribute for checkbox, radio or select elements. When the value
-     *                                 of an editChooser changes, elements with this attribute set to the
-     *                                 editChooser id will be hidden and the selected option will be displayed.
+     * @param string dataChoice        Single selector. Attribute for editChooser elements to specify selected option.
+     * @param string dataChooser       Attribute. When the value of an editChooser changes, elements with this attribute
+     *                                 set to the editChooser id will be hidden and selected option will be displayed.
      * @param string editTable         Multiple selector. An action column will be prepended to all rows
      *                                 in these tables to allow adding and removing of rows. Each table
      *                                 must have a row set to editTableTemplate selector for adding of
@@ -84,6 +84,7 @@
         dataOptions: 'data-options',
         dataAttributes: 'data-attr',
         editChooser: '.edit-chooser',
+        dataChoice: 'data-choice',
         dataChooser: 'data-chooser',
         editTable: '.edit-table',
         editTableTemplate: '.edit-table-template',
@@ -113,6 +114,7 @@
             this.addHtml5InputType();
             $(this.config.edit).each(this.editFunc);
 
+            $(this.config.editChooser).each(this.editChooserOnLoadFunc);
             $(this.config.editChooser).change(this.editChooserOnChangeFunc);
             $(this.config.editChooser).change(); // trigger on load
 
@@ -176,13 +178,23 @@
             });
         },
 
-        // Event handler for <select> elements with 'edit-chooser' class to choose content to display/edit
-        // Eg. of 1 chooser (option values set to selectors) & 2 choices (data-chooser attribute set to chooser id):
-        // <select id="z-chooser" class="edit-chooser">
+        // Event handlers for <select> elements with 'edit-chooser' class to choose content to display/edit
+        // Eg. 1 chooser (option values set to selectors) & 2 choices (data-chooser attribute set to chooser id):
+        //     On load, the option with the value specified by data-choice attribute will be marked as selected
+        // <select id="z-chooser" class="edit-chooser" data-choice="#b">
         //   <option value="#a">A</option><option value="#b">B</option>
         // </select>
         // <span id="a" data-chooser="#z-chooser">Content for A</span>
         // <span id="b" data-chooser="#z-chooser">Content for B</span>
+        editChooserOnLoadFunc: function () {
+            var dataChoice = $.znJEditable.config.dataChoice,
+                choice = $(this).attr(dataChoice);
+            if (undefined === choice) {
+                return;
+            }
+            $(this).children('option').attr('selected', null); // clear previous selections
+            $(this).children('option[value="' + choice + '"]').attr('selected', 'selected'); // save selection
+        },
         editChooserOnChangeFunc: function () {
             var dataChooser = $.znJEditable.config.dataChooser,
                 value = $(this).val();
