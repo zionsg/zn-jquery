@@ -4,7 +4,7 @@
  * @author  Zion Ng <zion@intzone.com>
  * @link    https://github.com/tuupola/jquery_jeditable for jEditable repository
  * @link    https://github.com/zionsg/zn-jquery/tree/master/znJEditable for canonical source repository
- * @version 1.1.0
+ * @version 1.1.1
  */
 
 (function ($) {
@@ -202,9 +202,12 @@
         // <span id="a" data-chooser="#z-chooser">Content for A</span>
         // <span id="b" data-chooser="#z-chooser">Content for B</span>
         editChooserOnLoadFunc: function () {
+            // if there is already a selected option, dataChoice should not override it
+            // as it could have been a saved selection by a user
             var dataChoice = $.znJEditable.config.dataChoice,
-                choice = $(this).attr(dataChoice);
-            if (undefined === choice) {
+                choice = $(this).attr(dataChoice),
+                hasSelected = (1 == $(this).children('option[selected="selected"]').length);
+            if (undefined === choice || hasSelected) {
                 return;
             }
             $(this).children('option').attr('selected', null); // clear previous selections
